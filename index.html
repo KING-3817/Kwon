@@ -5,64 +5,39 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Image Draw</title>
 <style>
-/* 모든 요소의 크기 계산과 기본 여백을 초기화합니다. */
 *{box-sizing:border-box;margin:0;padding:0}
-/* 화면 전체를 사용하고 페이지 스크롤을 막습니다. */
 html,body{width:100%;height:100%;overflow:hidden}
-/* 앱을 세로 방향으로 가운데 정렬합니다. */
 body{display:flex;align-items:center;justify-content:center;background:#fff;color:#111;font-family:Arial,"Noto Sans KR",sans-serif}
-/* 위에서부터 애니메이션, 룰렛, 버튼, 결과, 확률표 순서입니다. */
-.app{width:min(92vw,480px);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
-/* 선택된 항목의 애니메이션 영역입니다. */
+.app{position:relative;width:min(100vw,calc(100vh*9/16));height:min(100vh,calc(100vw*16/9));aspect-ratio:9/16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;overflow:hidden}
+.missing-files{position:absolute;top:6px;left:6px;z-index:100;max-width:calc(100% - 12px);display:none;flex-direction:column;color:red;font-size:12px;font-weight:700;line-height:1.25;word-break:break-all;text-shadow:0 0 2px #fff,0 0 4px #fff;pointer-events:none}
 .animation-box{width:100%;flex:1;min-height:0;display:flex;align-items:flex-end;justify-content:center}
-/* 이미지와 등장 효과의 기준이 되는 영역입니다. */
-.image-wrap{position:relative;width:min(85vw,400px);display:flex;align-items:flex-end;justify-content:center;overflow:visible}
-/* 일반 항목의 애니메이션 이미지입니다. */
+.image-wrap{position:relative;width:min(85%,400px);display:flex;align-items:flex-end;justify-content:center;overflow:visible}
 #image{width:100%;height:auto;display:block;object-fit:contain;transform:scaleY(1);transform-origin:center bottom;will-change:transform;backface-visibility:hidden}
-/* 히든 오디오 중간에 등장하는 좌우 보조 애니메이션입니다. */
 .side-animation{position:absolute;top:34%;width:34%;height:auto;z-index:3;display:none;object-fit:contain;pointer-events:none;opacity:0;transform:translateX(var(--side-shift,0%))}
-/* 좌우 보조 애니메이션은 크게 만들고 제로투 가까이에 배치합니다. */
 #sideLeft{left:0}#sideRight{right:0}
-/* L을 가져가 당첨 시 배경 전체에 강한 색상 효과를 냅니다. */
-.hidden-background-effect.l-effect{background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,55,55,.7) 35%,rgba(120,0,0,.35) 65%,transparent 78%)}
 .side-animation.show{display:block;animation:sidePop .3s ease-out forwards}
-/* 히든 등장 전 배경 빛 효과입니다. 테두리에 붙지 않도록 inset 여백을 둡니다. */
 .hidden-background-effect{position:absolute;inset:-8%;z-index:4;display:none;border-radius:24px;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,210,70,.55) 35%,rgba(255,70,0,.2) 65%,transparent 78%);opacity:0}
+.hidden-background-effect.l-effect{background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,55,55,.7) 35%,rgba(120,0,0,.35) 65%,transparent 78%)}
 .hidden-background-effect.active{display:block;animation:hiddenGlow 7s ease-in-out forwards}
-/* 히든 등장 전에 표시하는 댓글 이미지입니다. */
 .comment-image{position:absolute;left:8%;width:84%;height:auto;z-index:7;display:none;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));opacity:0}
-/* 댓글은 상단, 중단, 하단에 배치하되 가장자리에 여유를 둡니다. */
 #comment1{top:6%}#comment2{top:43%}#comment3{bottom:6%}
-/* 댓글이 하나씩 튀어나오는 효과입니다. */
 .comment-image.show{display:block;animation:commentPop .32s ease-out forwards}
-/* 룰렛 미리보기 영역입니다. */
 .draw-box{width:100%;height:100px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-/* 룰렛 미리보기 이미지입니다. */
 #rouletteImage{width:100%;height:100%;display:block;object-fit:contain;user-select:none;cursor:pointer}
-/* 뽑기 버튼입니다. */
 #drawButton{width:100%;height:54px;border:0;border-radius:14px;background:#111;color:#fff;font-size:18px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
-#drawButton:active{transform:scale(.98)}
-#drawButton:disabled{opacity:.45}
-/* 결과 이름을 표시합니다. 히든 당첨 시에는 히든으로 표시합니다. */
+#drawButton:active{transform:scale(.98)}#drawButton:disabled{opacity:.45}
 .result{min-height:24px;font-size:16px;font-weight:700;text-align:center}
-/* 확률표는 화면 맨 아래에 작게 표시합니다. */
 .probability-table{width:100%;border-collapse:collapse;font-size:10px;text-align:center}
 .probability-table caption{margin-bottom:2px;font-size:10px;font-weight:700}
 .probability-table th,.probability-table td{padding:2px 3px;border:1px solid #e5e5e5;line-height:1.1}
 .probability-table th{background:#f4f4f4;font-weight:700}
-.probability-table tbody tr{cursor:pointer}
-.probability-table tbody tr:active{background:#eee}
-/* 일반 플래시 효과입니다. */
+.probability-table tbody tr{cursor:pointer}.probability-table tbody tr:active{background:#eee}
 .flash{position:absolute;inset:0;z-index:5;background:#fff;opacity:0;pointer-events:none}
 .flash.active{animation:flashEffect 120ms ease-out}
-/* L을 가져가 당첨 시 사용하는 폭발 효과입니다. */
 .explosion{position:absolute;inset:-35%;z-index:8;display:none;pointer-events:none;background:radial-gradient(circle,#fff 0 8%,#ffd84d 10% 16%,#ff7b00 18% 25%,transparent 27%);filter:drop-shadow(0 0 12px #ff5e00)}
 .explosion.active{display:block;animation:explode .7s ease-out forwards}
-/* 히든 배경이 빛나는 효과입니다. */
 @keyframes hiddenGlow{0%,100%{opacity:0;transform:scale(.8)}15%{opacity:.85;transform:scale(1)}85%{opacity:.45;transform:scale(1.08)}}
-/* 댓글 이미지가 딱딱딱 등장하는 효과입니다. */
 @keyframes commentPop{0%{opacity:0;transform:scale(.65)}70%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
-/* 좌우 보조 애니메이션이 등장하는 효과입니다. */
 @keyframes sidePop{0%{opacity:0;transform:scale(.65) translateX(var(--side-shift,0%))}70%{opacity:1;transform:scale(1.06) translateX(var(--side-shift,0%))}100%{opacity:1;transform:scale(1) translateX(var(--side-shift,0%))}}
 @keyframes flashEffect{0%{opacity:0}35%{opacity:.95}100%{opacity:0}}
 @keyframes explode{0%{opacity:0;transform:scale(.1) rotate(0)}20%{opacity:1;transform:scale(.65) rotate(25deg)}100%{opacity:0;transform:scale(1.8) rotate(90deg)}}
@@ -70,38 +45,21 @@ body{display:flex;align-items:center;justify-content:center;background:#fff;colo
 </head>
 <body>
 <div class="app">
-  <!-- 맨 위: 선택 결과 애니메이션 영역입니다. -->
-  <div class="animation-box">
-    <div class="image-wrap">
-      <div id="hiddenBackgroundEffect" class="hidden-background-effect"></div>
-      <img id="image" alt="">
-      <img id="sideLeft" class="side-animation" alt="">
-      <img id="sideRight" class="side-animation" alt="">
-      <img id="comment1" class="comment-image" alt="">
-      <img id="comment2" class="comment-image" alt="">
-      <img id="comment3" class="comment-image" alt="">
-      <div id="flash" class="flash"></div>
-      <div id="explosion" class="explosion"></div>
-    </div>
-  </div>
-
-  <!-- 그 아래: 룰렛 미리보기입니다. -->
-  <div class="draw-box"><img id="rouletteImage" alt=""></div>
-  <!-- 그 아래: 뽑기 버튼입니다. -->
-  <button id="drawButton">뽑기</button>
-  <!-- 추첨 결과 이름입니다. -->
-  <div id="result" class="result">항목을 뽑아보세요</div>
-  <!-- 맨 아래: 작은 확률표입니다. 제로투는 ???로 표시합니다. -->
-  <table class="probability-table">
-    <caption>확률표</caption>
-    <thead><tr><th>항목</th><th>확률</th><th>항목</th><th>확률</th><th>항목</th><th>확률</th></tr></thead>
-    <tbody id="probabilityBody"></tbody>
-  </table>
+<div id="missingFiles" class="missing-files"></div>
+<div class="animation-box"><div class="image-wrap">
+<div id="hiddenBackgroundEffect" class="hidden-background-effect"></div>
+<img id="image" alt=""><img id="sideLeft" class="side-animation" alt=""><img id="sideRight" class="side-animation" alt="">
+<img id="comment1" class="comment-image" alt=""><img id="comment2" class="comment-image" alt=""><img id="comment3" class="comment-image" alt="">
+<div id="flash" class="flash"></div><div id="explosion" class="explosion"></div>
+</div></div>
+<div class="draw-box"><img id="rouletteImage" alt=""></div>
+<button id="drawButton">뽑기</button>
+<div id="result" class="result">항목을 뽑아보세요</div>
+<table class="probability-table"><caption>확률표</caption><thead><tr><th>항목</th><th>확률</th><th>항목</th><th>확률</th><th>항목</th><th>확률</th></tr></thead><tbody id="probabilityBody"></tbody></table>
 </div>
 <script>
-/* 항목별 이름, 확률, 애니메이션 프레임과 특수 효과를 한곳에서 관리합니다. */
 const items=[
-  {name:"제로투",displayName:"히든",tableName:"???",probability:1,frames:[1,2],audio:"히든.m4a",noPreview:true},
+{name:"제로투",displayName:"히든",tableName:"???",probability:1,frames:[1,2],audio:"히든.m4a",noPreview:true},
 {name:"L을 가져가",probability:3,frames:[1,2],explode:true},
 {name:"크림 치즈 허니",probability:5,frames:[1,2]},
 {name:"라운드 & 라운드",probability:5.5,frames:[1,2,3,4]},
@@ -116,419 +74,255 @@ const items=[
 {name:"팁 토",probability:16,frames:[1,2]}
 ];
 
-/* 화면 표시용 배열과 애니메이션 조회용 객체를 만듭니다. */
-const names=items.map(item=>item.name);
-const sequences=Object.fromEntries(items.map(item=>[item.name,item.frames]));
-const totalProbability=items.reduce((sum,item)=>sum+item.probability,0);
+const names=items.map(x=>x.name),seqs=Object.fromEntries(items.map(x=>[x.name,x.frames])),total=items.reduce((a,x)=>a+x.probability,0),DIR="./";
+const $=id=>document.getElementById(id),missing=$("missingFiles"),missingSet=new Set(),imgCache=new Map(),audioCache=new Map();
 
-/* 모든 이미지와 오디오가 들어 있는 폴더 경로입니다. 기존 경로를 그대로 유지합니다. */
-const IMAGE_DIR="./";
-const imageStore=new Map();
-
-/* 같은 이미지가 반복 생성되지 않도록 Image 객체를 캐시합니다. */
-const getImage=(key,path)=>{
-  if(!imageStore.has(key)){
-    const img=new Image();
-    img.src=path;
-    imageStore.set(key,img);
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function miss(file){if(missingSet.has(file))return;missingSet.add(file);missing.innerHTML=[...missingSet].map(x=>`<div>${esc(x)}</div>`).join("");missing.style.display="flex"}
+function getImg(key,path){
+  if(!imgCache.has(key)){
+    const x=new Image();
+    x.onerror=()=>miss(path.split("/").pop());
+    x.src=path;
+    imgCache.set(key,x)
   }
-  return imageStore.get(key);
+  return imgCache.get(key)
+}
+const preview=n=>getImg("p:"+n,`${DIR}${n}.png`);
+const frame=(n,f)=>getImg("f:"+n+":"+f,`${DIR}${n}${f}.png`);
+const comment=n=>getImg("c:"+n,`${DIR}댓글${n}.png`);
+
+items.forEach(x=>{
+  if(!x.noPreview)preview(x.name);
+  x.frames.filter(f=>f!=="FLASH").forEach(f=>frame(x.name,f));
+  const a=x.audio||x.name+".m4a";
+  if(!audioCache.has(a)){
+    const au=new Audio();
+    au.preload="metadata";
+    au.onerror=()=>miss(a);
+    au.src=DIR+a;
+    au.load();
+    audioCache.set(a,au)
+  }
+});
+[1,2,3].forEach(comment);
+
+const roulette=$("rouletteImage"),button=$("drawButton"),result=$("result"),image=$("image"),flash=$("flash"),explosion=$("explosion"),bg=$("hiddenBackgroundEffect"),left=$("sideLeft"),right=$("sideRight"),comments=[$("comment1"),$("comment2"),$("comment3")],body=$("probabilityBody");
+
+body.innerHTML=Array.from({length:Math.ceil(items.length/3)},(_,r)=>{
+  return `<tr>${items.slice(r*3,r*3+3).map(x=>`<td data-name="${esc(x.name)}">${esc(x.tableName||x.name)}</td><td data-name="${esc(x.name)}">${x.probability}%</td>`).join("")}</tr>`
+}).join("");
+
+const clicks=new Map();
+body.onclick=e=>{
+  const c=e.target.closest("[data-name]");
+  if(!c)return;
+  const n=c.dataset.name,cnt=(clicks.get(n)||0)+1;
+  clicks.set(n,cnt);
+  if(cnt>=10){forcedNext=n;clicks.set(n,0)}
 };
 
-/* 일반 항목의 룰렛 미리보기 이미지입니다. */
-const preview=name=>getImage(`preview:${name}`,`${IMAGE_DIR}${name}.png`);
-/* 일반 항목의 애니메이션 프레임 이미지입니다. */
-const frame=(name,no)=>getImage(`frame:${name}:${no}`,`${IMAGE_DIR}${name}${no}.png`);
-/* 히든 댓글 이미지 3장의 경로입니다. */
-const commentImage=no=>getImage(`comment:${no}`,`${IMAGE_DIR}댓글${no}.png`);
+const show=(el,img)=>{el.hidden=false;el.src=img.src},hide=el=>{el.hidden=true;el.removeAttribute("src")};
+let running=false,selected=0,currentItem=null,forcedNext=null,activeAudio=null,fastFade=false,prepared=null,retryTimer=null,hiddenRun=0;
 
-/* 제로투는 룰렛 미리보기 없이 애니메이션 프레임만 미리 로드합니다. */
-items.forEach(item=>{
-  if(!item.noPreview)preview(item.name);
-  item.frames.filter(value=>value!=="FLASH").forEach(value=>frame(item.name,value));
-});
-[1,2,3].forEach(commentImage);
+show(roulette,preview(names[1]));
 
-/* 화면 요소를 한 번만 찾아 이후 함수에서 재사용합니다. */
-const $=id=>document.getElementById(id);
-const rouletteImage=$("rouletteImage");
-const button=$("drawButton");
-const result=$("result");
-const image=$("image");
-const flash=$("flash");
-const explosion=$("explosion");
-const hiddenBackgroundEffect=$("hiddenBackgroundEffect");
-const sideLeft=$("sideLeft");
-const sideRight=$("sideRight");
-const commentImages=[$("comment1"),$("comment2"),$("comment3")];
-
-/* Image 객체의 실제 주소를 화면의 img 요소에 연결합니다. */
-const show=(element,img)=>{element.hidden=false;element.src=img.src};
-/* 미리보기나 애니메이션 이미지를 화면에서 숨깁니다. */
-const hide=element=>{element.hidden=true;element.removeAttribute("src")};
-
-let running=false;
-let selected=0;
-let currentItem=null;
-let forcedNext=null;
-/* 현재 재생 중인 히든 음악과 이전 히든 연출을 관리합니다. */
-let activeAudio=null;
-let activeAudioFastFade=false;
-let preparedAudio=null;
-let audioRetryTimer=null;
-let hiddenRun=0;
-
-/* 확률표를 3개 항목씩 한 줄에 배치합니다. */
-const probabilityBody=$("probabilityBody");
-const rows=[];
-for(let i=0;i<items.length;i+=3){
-  const cells=items.slice(i,i+3).map(item=>{
-    /* 제로투만 확률표에서 ???로 숨기고 실제 내부 이름은 유지합니다. */
-    const tableName=item.tableName||item.name;
-    return `<td data-name="${item.name}">${tableName}</td><td data-name="${item.name}">${item.probability}%</td>`;
-  }).join("");
-  rows.push(`<tr>${cells}</tr>`);
-}
-probabilityBody.innerHTML=rows.join("");
-
-/* 확률표에서 같은 항목을 10번 누르면 다음 추첨을 해당 항목으로 고정합니다. */
-const clickCounts=new Map();
-probabilityBody.addEventListener("click",event=>{
-  const cell=event.target.closest("[data-name]");
-  if(!cell)return;
-  const name=cell.dataset.name;
-  const count=(clickCounts.get(name)||0)+1;
-  clickCounts.set(name,count);
-  if(count>=10){
-    forcedNext=name;
-    clickCounts.set(name,0);
-  }
-});
-
-/* 첫 화면에는 제로투 대신 첫 번째 일반 항목의 미리보기를 표시합니다. */
-show(rouletteImage,preview(names[1]));
-
-/* 확정 항목이 있으면 우선 사용하고, 없으면 설정된 확률로 추첨합니다. */
 function randomIndex(){
-  if(forcedNext!==null){
-    const name=forcedNext;
-    forcedNext=null;
-    return names.indexOf(name);
-  }
-  let value=Math.random()*totalProbability;
-  return items.findIndex(item=>(value-=item.probability)<0);
+  if(forcedNext!==null){const n=forcedNext;forcedNext=null;return names.indexOf(n)}
+  let v=Math.random()*total;
+  return items.findIndex(x=>(v-=x.probability)<0)
 }
 
-/* 버튼을 누르면 선택 항목을 정하고 룰렛을 시작합니다. */
-button.addEventListener("click",()=>{
+button.onclick=()=>{
   if(running)return;
-  /* 버튼은 항상 새 추첨을 시작합니다. */
-  fadeOutAudio();
+  fadeOut();
   hiddenRun++;
   running=true;
   button.disabled=true;
   result.textContent="뽑는 중...";
   selected=randomIndex();
-  /* 사용자 클릭 순간에 오디오를 무음으로 준비해 브라우저 재생 차단을 피합니다. */
   prepareAudio(items[selected]);
-  startRoulette();
-});
+  rouletteRun()
+};
 
-/* 숫자 없는 룰렛 이미지를 누르면 현재 결과를 다시 재생합니다. */
-rouletteImage.addEventListener("click",()=>{
+roulette.onclick=()=>{
   if(running||!currentItem||activeAudio)return;
-  fadeOutAudio();
+  fadeOut();
   hiddenRun++;
-  startResult(currentItem,true);
-});
+  startResult(currentItem,true)
+};
 
-/* 룰렛이 점점 느려지다가 최종 선택 항목에서 멈춥니다. */
-function startRoulette(){
-  /* 기존보다 빠르게 돌고, 마지막에는 짧게 감속합니다. */
-  const total=18;
-  let count=0;
-  let index=Math.floor(Math.random()*names.length);
-  const change=()=>{
-    if(count<total){
+function rouletteRun(){
+  const totalSpin=18;
+  let count=0,index=Math.floor(Math.random()*names.length);
+  function next(){
+    if(count<totalSpin){
       index=(index+1)%names.length;
-      const item=items[index];
-      if(item.noPreview)hide(rouletteImage);
-      else show(rouletteImage,preview(item.name));
+      const x=items[index];
+      x.noPreview?hide(roulette):show(roulette,preview(x.name));
       count++;
-      setTimeout(change,20+Math.pow(count/total,2.8)*220);
-      return;
+      return setTimeout(next,20+Math.pow(count/totalSpin,2.8)*220)
     }
-    const item=items[selected];
-    currentItem=item;
-    if(item.noPreview)hide(rouletteImage);
-    else show(rouletteImage,preview(item.name));
-    result.textContent=item.displayName||item.name;
-    /* 룰렛 회전이 끝나면 즉시 결과 재생 버튼을 다시 활성화합니다. */
-    setTimeout(()=>{
-      startResult(item);
-      running=false;
-      button.disabled=false;
-    },250);
-  };
-  change();
+    const x=items[selected];
+    currentItem=x;
+    x.noPreview?hide(roulette):show(roulette,preview(x.name));
+    result.textContent=x.displayName||x.name;
+    setTimeout(()=>{startResult(x);running=false;button.disabled=false},250)
+  }
+  next()
 }
 
-/* 최종 결과에 맞는 폭발, 오디오, 댓글, 애니메이션을 실행합니다. */
-function startResult(item,isReplay=false){
-  /* 이전 결과의 좌우 보조 이미지가 남지 않도록 초기화합니다. */
-  sideLeft.classList.remove("show");
-  sideRight.classList.remove("show");
-  if(item.explode){
-    triggerExplosion();
-    startBackgroundEffect("l");
-  }
+function createAudio(name){
+  const a=new Audio(DIR+name);
+  a.onerror=()=>miss(name);
+  return a
+}
 
-  /* 새로 추가한 기본음은 이름.m4a를 사용하고, 제로투는 기존 히든.m4a를 유지합니다. */
-  const isHidden=item.name==="제로투";
-  const isDefaultAudio=!item.audio;
-  const audioName=item.audio||`${item.name}.m4a`;
-  /* 클릭 순간 준비한 오디오를 사용해 재생 실패를 줄입니다. */
-  const audio=preparedAudio&&preparedAudio.itemName===item.name?preparedAudio.audio:new Audio(`${IMAGE_DIR}${audioName}`);
-  preparedAudio=null;
-  /* 모든 소리는 반복 재생하지 않고 한 번만 재생합니다. */
-  audio.loop=false;
-  /* 짧은 페이드는 새 기본음에만 적용하고 기존 히든 음악은 원래 방식으로 재생합니다. */
-  audio.volume=isDefaultAudio?0:1;
-  activeAudio=audio;
-  activeAudioFastFade=isDefaultAudio;
-  audio.volume=isDefaultAudio?0:1;
-  /* 정상 종료와 재생 실패 모두 버튼 잠금을 해제할 수 있게 합니다. */
-  audio.addEventListener("ended",()=>{
-    if(audio===activeAudio)activeAudio=null;
-    finishDraw();
-  },{once:true});
-  audio.currentTime=0;
-  audio.play().then(()=>{clearInterval(audioRetryTimer);if(isDefaultAudio)fadeInAudio(audio)}).catch(()=>retryAudio(audio,isDefaultAudio));
+function startResult(item){
+  left.classList.remove("show");
+  right.classList.remove("show");
+  if(item.explode){explode();bgEffect("l")}
+  const hidden=item.name==="제로투",def=!item.audio,name=item.audio||item.name+".m4a";
+  const a=prepared&&prepared.name===item.name?prepared.audio:createAudio(name);
+  prepared=null;
+  a.loop=false;
+  a.volume=def?0:1;
+  activeAudio=a;
+  fastFade=def;
+  a.onended=()=>{if(a===activeAudio)activeAudio=null;finish()};
+  a.currentTime=0;
+  a.play().then(()=>{clearInterval(retryTimer);if(def)fadeIn(a)}).catch(()=>retry(a,def));
 
-  if(isHidden){
-    /* 제로투는 이미지 공간을 유지한 채 보이지 않게 하고 댓글 연출을 먼저 시작합니다. */
+  if(hidden){
     image.hidden=false;
     image.style.visibility="hidden";
     image.src=frame(item.name,1).src;
-    startHiddenPrelude();
+    hiddenPrelude();
     const run=hiddenRun;
-    /* 오디오 시작 7초 뒤 제로투 애니메이션을 등장시킵니다. */
     setTimeout(()=>{
       if(run!==hiddenRun)return;
-      image.hidden=false;
       image.style.visibility="visible";
       startAnimation(item.name);
-      triggerExplosion();
-      /* 제로투 본 애니메이션이 시작되는 즉시 댓글을 숨깁니다. */
-      commentImages.forEach(comment=>comment.classList.remove("show"));
-      hiddenBackgroundEffect.classList.remove("active");
+      explode();
+      comments.forEach(x=>x.classList.remove("show"));
+      bg.classList.remove("active")
     },7000);
-    /* 오디오 9초에 왼쪽에서 L을 가져가를 등장시킵니다. */
-    setTimeout(()=>{if(run===hiddenRun)showSideAnimation(sideLeft,"L을 가져가")},9000);
-    /* 오디오 12.5초에 오른쪽에서 크림 치즈 허니를 등장시킵니다. */
-    setTimeout(()=>{if(run===hiddenRun)showSideAnimation(sideRight,"크림 치즈 허니")},12500);
-    return;
+    setTimeout(()=>run===hiddenRun&&side(left,"L을 가져가"),9000);
+    setTimeout(()=>run===hiddenRun&&side(right,"크림 치즈 허니"),12500);
+    return
   }
-
   image.hidden=false;
   image.style.visibility="visible";
-  startAnimation(item.name);
+  startAnimation(item.name)
 }
 
-/* 좌우 보조 항목을 작은 애니메이션 이미지로 표시합니다. */
-function showSideAnimation(element,name){
-  element.src=frame(name,1).src;
-  element.dataset.name=name;
-  element.classList.remove("show");
-  void element.offsetWidth;
-  element.classList.add("show");
-  let next=2;
-  const timer=setInterval(()=>{
-    if(!element.classList.contains("show")){clearInterval(timer);return}
-    element.src=frame(name,next).src;
-    next=next===2?1:2;
-  },450);
+function side(el,name){
+  el.src=frame(name,1).src;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  let n=2;
+  const t=setInterval(()=>{
+    if(!el.classList.contains("show"))return clearInterval(t);
+    el.src=frame(name,n).src;
+    n=n===2?1:2
+  },450)
 }
 
-/* 오디오가 시작된 뒤 약 1.1초부터 댓글1, 댓글2, 댓글3을 차례로 표시합니다. */
-/* 현재 음악을 짧게 페이드아웃한 뒤 정지합니다. */
-/* 오디오가 끝나거나 재생에 실패하면 다음 추첨을 허용합니다. */
-/* 클릭 순간 재생이 막혔을 때 재생될 때까지 짧은 간격으로 다시 시도합니다. */
-function retryAudio(audio,isDefaultAudio){
-  clearInterval(audioRetryTimer);
-  audioRetryTimer=setInterval(()=>{
-    audio.play().then(()=>{
-      clearInterval(audioRetryTimer);
-      if(isDefaultAudio)fadeInAudio(audio);
-    }).catch(()=>{});
-  },400);
+function retry(a,def){
+  clearInterval(retryTimer);
+  retryTimer=setInterval(()=>a.play().then(()=>{clearInterval(retryTimer);if(def)fadeIn(a)}).catch(()=>{}),400)
 }
-
-/* 클릭 순간 항목 오디오를 무음으로 재생해 사용자 입력 권한을 확보합니다. */
 function prepareAudio(item){
-  const audioName=item.audio||`${item.name}.m4a`;
-  const audio=new Audio(`${IMAGE_DIR}${audioName}`);
-  audio.loop=false;
-  audio.volume=0;
-  audio.preload="auto";
-  preparedAudio={itemName:item.name,audio};
-  audio.play().then(()=>clearInterval(audioRetryTimer)).catch(()=>retryAudio(audio,!item.audio));
+  const name=item.audio||item.name+".m4a",a=createAudio(name);
+  a.loop=false;a.volume=0;a.preload="auto";
+  prepared={name:item.name,audio:a};
+  a.play().then(()=>clearInterval(retryTimer)).catch(()=>retry(a,!item.audio))
 }
-
-function finishDraw(){
-  running=false;
-  button.disabled=false;
-}
-
-function fadeInAudio(audio){
-  const started=performance.now();
-  const fade=now=>{
-    if(audio!==activeAudio)return;
-    const progress=Math.min((now-started)/220,1);
-    audio.volume=progress;
-    if(progress<1)requestAnimationFrame(fade);
+function finish(){running=false;button.disabled=false}
+function fadeIn(a){
+  const t=performance.now(),f=n=>{
+    if(a!==activeAudio)return;
+    a.volume=Math.min((n-t)/220,1);
+    if(a.volume<1)requestAnimationFrame(f)
   };
-  requestAnimationFrame(fade);
+  requestAnimationFrame(f)
 }
-
-/* 새 결과가 나오면 이전 오디오를 짧게 페이드아웃하고 정지합니다. */
-function fadeOutAudio(){
+function fadeOut(){
   if(!activeAudio)return;
-  const audio=activeAudio;
-  const duration=activeAudioFastFade?420:650;
-  activeAudio=null;
-  activeAudioFastFade=false;
-  const start=audio.volume;
-  const started=performance.now();
-  const fade=now=>{
-    const progress=Math.min((now-started)/duration,1);
-    /* 부동소수점 오차로 음량이 음수가 되지 않도록 0~1로 고정합니다. */
-    audio.volume=Math.min(1,Math.max(0,start*(1-progress)));
-    if(progress<1)requestAnimationFrame(fade);
-    else{audio.pause();audio.currentTime=0;audio.volume=1}
+  const a=activeAudio,d=fastFade?420:650,s=a.volume,t=performance.now();
+  activeAudio=null;fastFade=false;
+  const f=n=>{
+    const p=Math.min((n-t)/d,1);
+    a.volume=Math.max(0,s*(1-p));
+    if(p<1)requestAnimationFrame(f);
+    else{a.pause();a.currentTime=0;a.volume=1}
   };
-  requestAnimationFrame(fade);
+  requestAnimationFrame(f)
+}
+function bgEffect(type){
+  bg.classList.remove("active","l-effect");
+  if(type==="l")bg.classList.add("l-effect");
+  void bg.offsetWidth;
+  bg.classList.add("active")
+}
+function hiddenPrelude(){
+  bg.classList.remove("active","l-effect");
+  comments.forEach(x=>x.classList.remove("show"));
+  void bg.offsetWidth;
+  bg.classList.add("active");
+  comments.forEach((x,i)=>{x.src=comment(i+1).src;setTimeout(()=>x.classList.add("show"),1100+i*350)})
 }
 
-function startBackgroundEffect(type){
-  hiddenBackgroundEffect.classList.remove("active","l-effect");
-  if(type==="l")hiddenBackgroundEffect.classList.add("l-effect");
-  void hiddenBackgroundEffect.offsetWidth;
-  hiddenBackgroundEffect.classList.add("active");
-}
+const TURN=450,SQUASH=.9,HALF=225,EIN="cubic-bezier(.45,0,.25,1)",EOUT="cubic-bezier(.34,1.18,.64,1)";
+let playing=false,sequence=[],position=0,currentName="";
 
-function startHiddenPrelude(){
-  hiddenBackgroundEffect.classList.remove("active","l-effect");
-  commentImages.forEach(comment=>comment.classList.remove("show"));
-  void hiddenBackgroundEffect.offsetWidth;
-  hiddenBackgroundEffect.classList.add("active");
-  commentImages.forEach((comment,index)=>{
-    comment.src=commentImage(index+1).src;
-    /* 애니메이션 영역 기준으로 상단, 중단, 하단에 차례로 표시합니다. */
-    setTimeout(()=>comment.classList.add("show"),1100+index*350);
-  });
-}
-
-/* 애니메이션 설정값입니다. */
-const TURN=450;
-const SQUASH=.9;
-const HALF=TURN/2;
-const EASE_IN="cubic-bezier(.45,0,.25,1)";
-const EASE_OUT="cubic-bezier(.34,1.18,.64,1)";
-let playing=false;
-let sequence=[];
-let position=0;
-let currentName="";
-
-/* 선택된 항목의 애니메이션을 초기화하고 시작합니다. */
 function startAnimation(name){
   playing=false;
-  image.getAnimations().forEach(animation=>animation.cancel());
-  /* 매번 새로 뽑을 때 선택 항목의 프레임 애니메이션을 처음부터 다시 시작합니다. */
+  image.getAnimations().forEach(a=>a.cancel());
   currentName=name;
-  sequence=sequences[name]||[1,2];
+  sequence=seqs[name]||[1,2];
   position=0;
   setFrame(sequence[0]);
   image.style.transform="scaleY(1)";
   flash.classList.remove("active");
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    playing=true;
-    animate();
-  }));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{playing=true;animate()}))
 }
 
-/* 번호 프레임 또는 FLASH 명령을 화면에 적용합니다. */
-function setFrame(value){
-  /* 제로투 프레임에 따라 좌우 보조 이미지 전체를 이동합니다. */
-  if(currentName==="제로투"&&value!=="FLASH")updateSidePosition(value);
-  if(value==="FLASH"){
-    triggerFlash();
-    return;
-  }
-  show(image,frame(currentName,value));
+function setFrame(v){
+  if(currentName==="제로투"&&v!=="FLASH")updateSide(v);
+  if(v==="FLASH")return triggerFlash();
+  show(image,frame(currentName,v))
 }
 
-/* 연속 플래시도 동작하도록 클래스를 제거했다가 다시 추가합니다. */
-function updateSidePosition(value){
-  /* CSS 애니메이션과 충돌하지 않도록 CSS 변수로 확실히 이동시킵니다. */
-  const shift=value===1?"16%":"-16%";
-  sideLeft.style.setProperty("--side-shift",shift);
-  sideRight.style.setProperty("--side-shift",shift);
+function updateSide(v){
+  const s=v===1?"16%":"-16%";
+  left.style.setProperty("--side-shift",s);
+  right.style.setProperty("--side-shift",s)
 }
+function triggerFlash(){flash.classList.remove("active");void flash.offsetWidth;flash.classList.add("active")}
+function explode(){explosion.classList.remove("active");void explosion.offsetWidth;explosion.classList.add("active")}
 
-function triggerFlash(){
-  flash.classList.remove("active");
-  void flash.offsetWidth;
-  flash.classList.add("active");
-}
-
-/* 폭발 효과를 다시 실행할 수 있도록 애니메이션을 초기화합니다. */
-function triggerExplosion(){
-  explosion.classList.remove("active");
-  void explosion.offsetWidth;
-  explosion.classList.add("active");
-}
-
-/* 프레임 사이에 찌그러짐과 복원 애니메이션을 반복합니다. */
 function animate(){
   if(!playing)return;
-  const current=sequence[position];
-  const next=sequence[(position+1)%sequence.length];
-
-  /* 셀카의 2번 프레임 구간은 몸통 움직임 없이 유지합니다. */
-  if(currentName==="셀카"&&[2,"FLASH"].includes(current)&&[2,"FLASH"].includes(next)){
+  const cur=sequence[position],next=sequence[(position+1)%sequence.length];
+  if(currentName==="셀카"&&[2,"FLASH"].includes(cur)&&[2,"FLASH"].includes(next)){
     position=(position+1)%sequence.length;
     setFrame(next);
     image.style.transform="scaleY(1)";
-    setTimeout(animate,next==="FLASH"?120:0);
-    return;
+    return setTimeout(animate,next==="FLASH"?120:0)
   }
-
-  image.animate(
-    [{transform:"scaleY(1)"},{transform:`scaleY(${SQUASH})`}],
-    {duration:HALF,easing:EASE_IN,fill:"forwards"}
-  ).finished.then(()=>{
+  image.animate([{transform:"scaleY(1)"},{transform:`scaleY(${SQUASH})`}],{duration:HALF,easing:EIN,fill:"forwards"}).finished
+  .then(()=>{
     if(!playing)return;
     image.style.transform=`scaleY(${SQUASH})`;
     position=(position+1)%sequence.length;
     setFrame(sequence[position]);
-    return image.animate(
-      [{transform:`scaleY(${SQUASH})`},{transform:"scaleY(1)"}],
-      {duration:HALF,easing:EASE_OUT,fill:"forwards"}
-    ).finished;
-  }).then(()=>{
-    if(playing){
-      image.style.transform="scaleY(1)";
-      animate();
-    }
-  }).catch(()=>{
-    if(playing){
-      image.style.transform="scaleY(1)";
-      animate();
-    }
-  });
+    return image.animate([{transform:`scaleY(${SQUASH})`},{transform:"scaleY(1)"}],{duration:HALF,easing:EOUT,fill:"forwards"}).finished
+  })
+  .then(()=>{if(playing){image.style.transform="scaleY(1)";animate()}})
+  .catch(()=>{if(playing){image.style.transform="scaleY(1)";animate()}})
 }
 </script>
 </body>
 </html>
-
